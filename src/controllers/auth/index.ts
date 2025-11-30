@@ -11,17 +11,18 @@ interface ApiResponse {
   message:string
 
 }
+interface VerifyQuery {
+  token?: string;
+}
 export const registerUser = async (
   req: Request<{}, {}, RegisterBody>,
   res: Response,
   next: NextFunction
 ) => {
-  console.log("===============================================>");
+  
   try {
     const { body } = req;
     console.log(req.body)
-    console.log("===============================================>11");
-    console.log("======11111111111=======",body.name,body.password);
     const { name, email, password } = body;
     if (!email || !password) {
       return res.status(400).json({
@@ -29,9 +30,6 @@ export const registerUser = async (
         data: "BAD REQUEST",
       });
     }
-    console.log(
-      "=============================================================1"
-    );
     // Controller stays same - service now returns ApiResponse perfectly
     const response: ApiResponse = await AuthServices.registerUserService(body);
     res.status(response.statusCode).json({
@@ -39,9 +37,37 @@ export const registerUser = async (
       message: response.message,
     });
   } catch (error) {
-    console.log("------------------------------------------");
-    return res
+        return res
       .status(500)
       .json({ success: false, message: "Internal server error" });
+  }
+};
+
+export const verifyEmail = async (
+  req: Request<{}, {}, {}, VerifyQuery>,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token } = req.query;
+     if (!token) {
+       return res.status(400).json({
+         success: false,
+         message: "Token required",
+       });
+     }
+
+    const response = await AuthServices.verifyEmailService(token);
+
+    return res.status(response.statusCode).json({
+      success: true,
+      message: response.message,
+    });
+  } catch (error) {
+    console.log(error);
+    return res.send({
+      statusCode: 500,
+      message: "Internal server error",
+    });
   }
 };

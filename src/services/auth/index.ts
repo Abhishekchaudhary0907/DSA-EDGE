@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import nodemailer, { type Transporter } from "nodemailer";
 import dotenv from "dotenv";
+import type { ParsedQs } from "qs";
 import jwt from "jsonwebtoken";
 //import { logger } from "../../utils/logger/index.js";
 dotenv.config({});
@@ -15,6 +16,9 @@ interface registerBodyType {
 interface ApiResponse {
   statusCode: number;
   message: string;
+}
+interface VerifyQuery {
+  token?: string;
 }
 export const registerUserService = async (
   body: registerBodyType
@@ -96,6 +100,47 @@ export const registerUserService = async (
       };
       //verify
     }
+  } catch (error: unknown) {
+    console.error(error);
+    throw new Error(error instanceof Error ? error.message : String(error));
+  }
+  return { statusCode: 500, message: "Registration failed unexpectedly" };
+};
+
+export const verifyEmailService = async (token:string) => {
+  try {
+    if (!token) {
+      return { statusCode: 400, message: "Token required" };
+    }
+    const user = await prisma.user.findFirst({
+      where: {
+        verificationToken: token,
+        verificationTokenExpires: { gt: new Date(Date.now()) },
+      },
+    });
+
+    if (!user) {
+      return {
+        statusCode: 400,
+        message: "user is not verified",
+      };
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isVerified: true,
+        resetPasswordToken: null,
+        resetPasswordTokenExpires: null,
+        verificationToken: null,
+        verificationTokenExpires: null,
+      },
+    });
+
+    return {
+      statusCode: 200,
+      message: "Email verified",
+    };
   } catch (error: unknown) {
     console.error(error);
     throw new Error(error instanceof Error ? error.message : String(error));
@@ -208,44 +253,7 @@ export const registerUserService = async (
 //   }
 // };
 
-// export const verifyEmailService = async (query) => {
-//   try {
-//     const token = query.token;
 
-//     const user = await prisma.user.findUnique({where: {
-//       verificationToken: token,
-//       verificationTokenExpires:{gt:new Date()}
-//     } });
-
-//     if (!user) {
-//       return {
-//         statusCode: 400,
-//         message: "user is not verified",
-//       };
-//     }
-
-//     await prisma.user.update({
-//       where:{id:user.id},
-//       data:{
-//         isVerified:true,
-//         resetPasswordToken:null,
-//         resetTokenExpiresToken:null,
-//         verificationToken:null,
-//         verificationTokenExpires:null,
-
-//       }
-//     })
-
-//     return {
-//       statusCode: 200,
-//       message: "Email verified",
-//     };
-//   } catch (error) {
-//     console.log(error)
-//     //logger.error(error);
-//     throw new Error(error);
-//   }
-// };
 
 // export const loginService = async (body) => {
 //   try {

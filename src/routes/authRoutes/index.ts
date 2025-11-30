@@ -3,5 +3,5 @@ import {AuthController} from '../../controllers/index.js'
 const router = express.Router();
 
 router.post('/register',AuthController.registerUser);
-
+router.post("/verify", AuthController.verifyEmail);
 export default router;
