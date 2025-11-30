@@ -21,7 +21,6 @@ export const registerUserService = async (
 ): Promise<ApiResponse> => {
   try {
     const { name, email, password, image } = body;
-    console.log("=========================================2");
 
     if (!email || !password) {
       return { statusCode: 400, message: "BAD REQUEST" };
@@ -37,7 +36,6 @@ export const registerUserService = async (
     }
 
     const hashedPassword: string = await bcrypt.hash(password, 10);
-    console.log("========================================================");
 
     const user = await prisma.user.create({
       data: {
@@ -74,7 +72,6 @@ export const registerUserService = async (
         },
       } as nodemailer.TransportOptions);
       //logger.info("transporter created");
-
       transporter.verify((error, success) => {
         if (error) {
           console.error("Transporter error:", error);
@@ -83,7 +80,6 @@ export const registerUserService = async (
         }
       });
       //logger.info(process.env.BASE_URL);
-
       await transporter.sendMail({
         from: '"abhishek" <cabhishek691@gmail.com>',
         to: "abhishek.abskch@gmail.com",
@@ -93,15 +89,11 @@ export const registerUserService = async (
         html: `Please click on following link:
               ${process.env.BASE_URL}/api/v1/auth/verify?token=${token}`, // HTML body
       });
-
       //logger.info("mail sent");
-
       return {
         statusCode: 200,
         message: "User registration successfull",
       };
-
-      
       //verify
     }
   } catch (error: unknown) {
