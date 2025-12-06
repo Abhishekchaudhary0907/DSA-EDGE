@@ -71,3 +71,38 @@ export const verifyEmail = async (
     });
   }
 };
+
+interface LoginApiResponse {
+  statusCode: number;
+  message: string;
+  token: string;
+}
+export const login = async(req:Request,res:Response,next:NextFunction) => {
+  try{
+    const { email, password } = req.body;
+
+    const response:LoginApiResponse = await AuthServices.loginService(email, password);
+
+    const cookieOptions = {
+      httpOnly: true, //now cookie is in control of backend ,cannot be accessed via JavaScript on the client side (e.g., via document.cookie)
+      secure: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    };
+    res.cookie("token", response.token, cookieOptions);
+
+    return res.status(response.statusCode).json({
+      success: true,
+      message: response.message,
+      token:response.token
+    });
+
+  }catch(error){
+   console.log(error);
+   return res.send({
+     statusCode: 500,
+     message: "Internal server error",
+   }); 
+
+  }
+    
+}

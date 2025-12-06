@@ -4,4 +4,5 @@ const router = express.Router();
 
 router.post('/register',AuthController.registerUser);
 router.post("/verify", AuthController.verifyEmail);
+router.post("/login", AuthController.login);
 export default router;

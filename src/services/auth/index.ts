@@ -17,6 +17,11 @@ interface ApiResponse {
   statusCode: number;
   message: string;
 }
+interface LoginApiResponse {
+  statusCode: number;
+  message: string;
+  token:string;
+}
 interface VerifyQuery {
   token?: string;
 }
@@ -148,6 +153,66 @@ export const verifyEmailService = async (token:string) => {
   return { statusCode: 500, message: "Registration failed unexpectedly" };
 };
 
+export const loginService = async (email:string,password:string):Promise<LoginApiResponse> => {
+  try {
+    
+    if (!email || !password) {
+      return { statusCode: 400, message: "invalid email or password",token:"" };
+    }
+
+    // const user = await User.findOne({ email });
+    const user = await prisma.user.findUnique({
+      where:{email}
+    });
+
+    if (!user) {
+      return { statusCode: 400, message: "user not found",token:"" };
+    }
+
+    const isVerified = user.isVerified;
+    if (!isVerified) {
+      return { statusCode: 400, message: "complete signup process",token:"" };
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    console.log(isMatch);
+
+    if (!isMatch) {
+      return { statusCode: 400, message: "something went wrong",token:"" };
+    }
+
+   //jwt.verify();
+    const secret:string = process.env.JWT_SECRET || '';
+
+    const accessToken = jwt.sign(
+      { id: user.id, role: user.role },
+      secret,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    // const refreshToken = jwt.sign(
+    //   { id: user._id, role: user.role },
+    //   process.env.JWT_REFRESH_TOKEN_SECRET,
+    //   {
+    //     expiresIn: "30d",
+    //   }
+    // );
+
+    // if (refreshToken) {
+    //   user.refreshToken = refreshToken;
+    //   await user.save();
+    // }
+
+    
+      return { statusCode: 200,message:"token generated successfully", token:accessToken };
+  } catch (error:unknown) {
+    console.error(error);
+    throw new Error(error instanceof Error ? error.message : String(error));
+  }
+};
+
 // export const getLoginService = (body) => {
 //   const { username, password } = body;
 
@@ -255,70 +320,6 @@ export const verifyEmailService = async (token:string) => {
 
 
 
-// export const loginService = async (body) => {
-//   try {
-//     const { email, password } = body;
-
-//     if (!email || !password) {
-//       return { statusCode: 400, message: "invalid email or password" };
-//     }
-
-//     // const user = await User.findOne({ email });
-//     const user = await prisma.user.findUnique({
-//       where:{email}
-//     });
-
-//     if (!user) {
-//       return { statusCode: 400, message: "user not found" };
-//     }
-
-//     const isVerified = user.isVerified;
-//     if (!isVerified) {
-//       return { statusCode: 400, message: "complete signup process" };
-//     }
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     console.log(isMatch);
-
-//     if (!isMatch) {
-//       return { statusCode: 400, message: "something went wrong" };
-//     }
-
-//    // jwt.verify();
-
-//     const accessToken = jwt.sign(
-//       { id: user.id, role: user.role },
-//       process.env.JWT_SECRET,
-//       {
-//         expiresIn: "15m",
-//       }
-//     );
-
-//     // const refreshToken = jwt.sign(
-//     //   { id: user._id, role: user.role },
-//     //   process.env.JWT_REFRESH_TOKEN_SECRET,
-//     //   {
-//     //     expiresIn: "30d",
-//     //   }
-//     // );
-
-//     // if (refreshToken) {
-//     //   user.refreshToken = refreshToken;
-//     //   await user.save();
-//     // }
-
-//     const cookieOptions = {
-//       httpOnly: true,//now cookie is in control of backend ,cannot be accessed via JavaScript on the client side (e.g., via document.cookie)
-//       secure:true,
-//       maxAge:24*60*60*1000
-//       }
-//       res.cookie('token',token,cookieOptions)
-//       return { statusCode: 200, accessToken };
-//   } catch (error) {
-//     console.error(error);
-//     throw new Error(error);
-//   }
-// };
 
 // export const getProfileService = async (user) => {
 //   try {
